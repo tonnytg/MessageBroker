@@ -6,8 +6,8 @@ import (
 	"messagebroker/rabbit"
 	"time"
 )
-
 func main() {
+	// I used https://api.cloudamqp.com in free tier for this example
 	conn, err := rabbit.GetConn("amqp://xreavpmp:Gu-USkeppkYYeeWfMOQ4ynEoqkyXb6Y-@elk.rmq2.cloudamqp.com/xreavpmp")
 	if err != nil {
 		panic(err)
