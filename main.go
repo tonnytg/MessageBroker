@@ -3,12 +3,21 @@ package main
 import (
 	"fmt"
 	"github.com/streadway/amqp"
-	"messagebroker/rabbit"
+	"messagebroker/pkg/rabbit"
+	"os"
 	"time"
 )
+
 func main() {
 	// I used https://api.cloudamqp.com in free tier for this example
-	conn, err := rabbit.GetConn("amqp://xreavpmp:Gu-USkeppkYYeeWfMOQ4ynEoqkyXb6Y-@elk.rmq2.cloudamqp.com/xreavpmp")
+	user := os.Getenv("RABBITMQ_USER")
+	password := os.Getenv("RABBITMQ_PASSWORD")
+	host := os.Getenv("RABBITMQ_HOST")
+	port := os.Getenv("RABBITMQ_PORT")
+	vhost := os.Getenv("RABBITMQ_VHOST")
+	database := os.Getenv("RABBITMQ_DATABASE")
+
+	conn, err := rabbit.GetConn(fmt.Sprintf("amqp://%s:%s@%s/%s", user, password, host, port, vhost, database))
 	if err != nil {
 		panic(err)
 	}
