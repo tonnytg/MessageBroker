@@ -1,4 +1,4 @@
-module messagebroker
+module github.com/tonnytg/messagebroker
 
 go 1.17
 
