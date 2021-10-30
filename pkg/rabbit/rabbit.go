@@ -4,10 +4,53 @@ import (
 	"fmt"
 	"github.com/streadway/amqp"
 	"os"
+	"time"
 )
 
 type Conn struct {
 	Channel *amqp.Channel
+}
+
+func InitRabbitMQ() {
+
+	// I used https://api.cloudamqp.com in free tier for this example
+	user := os.Getenv("RABBITMQ_USER")
+	password := os.Getenv("RABBITMQ_PASSWORD")
+	host := os.Getenv("RABBITMQ_HOST")
+	port := os.Getenv("RABBITMQ_PORT")
+	vhost := os.Getenv("RABBITMQ_VHOST")
+	database := os.Getenv("RABBITMQ_DATABASE")
+
+	conn, err := GetConn(fmt.Sprintf("amqp://%s:%s@%s/%s", user, password, host, port, vhost, database))
+	if err != nil {
+		panic(err)
+	}
+
+	go func() {
+		for {
+			time.Sleep(time.Second)
+			conn.Publish("test-key", []byte(`{"message":"test1"}`))
+		}
+	}()
+
+	err = conn.StartConsumer("test-queue", "test-key", handler, 2)
+
+	if err != nil {
+		panic(err)
+	}
+
+	forever := make(chan bool)
+	<-forever
+}
+
+
+func handler(d amqp.Delivery) bool {
+	if d.Body == nil {
+		fmt.Println("Error, no message body!")
+		return false
+	}
+	fmt.Println(string(d.Body))
+	return true
 }
 
 func GetConn(rabbitURL string) (Conn, error) {
@@ -32,8 +75,8 @@ func (conn Conn) Publish(routingKey string, data []byte) error {
 		// immediate - we don't care if there is no consumer on the queue
 		false,
 		amqp.Publishing{
-			ContentType: "application/json",
-			Body: data,
+			ContentType:  "application/json",
+			Body:         data,
 			DeliveryMode: amqp.Persistent,
 		})
 }
@@ -66,12 +109,12 @@ func (conn Conn) StartConsumer(
 
 	msgs, err := conn.Channel.Consume(
 		queueName, // queue
-		"", // consumer
-		false, // auto-ack
-		false, // exclusive
-		false, // no-local
-		false, // no-wait
-		nil, // args
+		"",        // consumer
+		false,     // auto-ack
+		false,     // exclusive
+		false,     // no-local
+		false,     // no-wait
+		nil,       // args
 	)
 	if err != nil {
 		return err
@@ -97,4 +140,3 @@ func (conn Conn) StartConsumer(
 	}
 	return nil
 }
-
