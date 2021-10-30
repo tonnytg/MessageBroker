@@ -17,11 +17,9 @@ func InitRabbitMQ() {
 	user := os.Getenv("RABBITMQ_USER")
 	password := os.Getenv("RABBITMQ_PASSWORD")
 	host := os.Getenv("RABBITMQ_HOST")
-	port := os.Getenv("RABBITMQ_PORT")
-	vhost := os.Getenv("RABBITMQ_VHOST")
 	database := os.Getenv("RABBITMQ_DATABASE")
 
-	conn, err := GetConn(fmt.Sprintf("amqp://%s:%s@%s/%s", user, password, host, port, vhost, database))
+	conn, err := GetConn(fmt.Sprintf("amqps://%s:%s@%s/%s", user, password, host, database))
 	if err != nil {
 		panic(err)
 	}
