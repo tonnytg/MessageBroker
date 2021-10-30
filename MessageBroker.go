@@ -1,4 +1,4 @@
-package MessageBroker
+package messagebroker
 
 import "github.com/tonnytg/messagebroker/pkg/rabbit"
 
