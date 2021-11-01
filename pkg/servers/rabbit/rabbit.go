@@ -4,45 +4,13 @@ import (
 	"fmt"
 	"github.com/streadway/amqp"
 	"os"
-	"time"
 )
 
 type Conn struct {
 	Channel *amqp.Channel
 }
 
-func InitRabbitMQ() {
-
-	// I used https://api.cloudamqp.com in free tier for this example
-	user := os.Getenv("RABBITMQ_USER")
-	password := os.Getenv("RABBITMQ_PASSWORD")
-	host := os.Getenv("RABBITMQ_HOST")
-	database := os.Getenv("RABBITMQ_DATABASE")
-
-	conn, err := GetConn(fmt.Sprintf("amqps://%s:%s@%s/%s", user, password, host, database))
-	if err != nil {
-		panic(err)
-	}
-
-	go func() {
-		for {
-			time.Sleep(time.Second)
-			conn.Publish("test-key", []byte(`{"message":"test1"}`))
-		}
-	}()
-
-	err = conn.StartConsumer("test-queue", "test-key", handler, 2)
-
-	if err != nil {
-		panic(err)
-	}
-
-	forever := make(chan bool)
-	<-forever
-}
-
-
-func handler(d amqp.Delivery) bool {
+func Handler(d amqp.Delivery) bool {
 	if d.Body == nil {
 		fmt.Println("Error, no message body!")
 		return false
@@ -51,7 +19,16 @@ func handler(d amqp.Delivery) bool {
 	return true
 }
 
-func GetConn(rabbitURL string) (Conn, error) {
+func GetConn() (Conn, error) {
+
+	// I used https://api.cloudamqp.com in free tier for this example
+	user := os.Getenv("RABBITMQ_USER")
+	password := os.Getenv("RABBITMQ_PASSWORD")
+	host := os.Getenv("RABBITMQ_HOST")
+	database := os.Getenv("RABBITMQ_DATABASE")
+
+	rabbitURL := fmt.Sprintf("amqps://%s:%s@%s/%s", user, password, host, database)
+
 	conn, err := amqp.Dial(rabbitURL)
 	if err != nil {
 		return Conn{}, err
@@ -66,7 +43,7 @@ func GetConn(rabbitURL string) (Conn, error) {
 func (conn Conn) Publish(routingKey string, data []byte) error {
 	return conn.Channel.Publish(
 		// exchange - yours may be different
-		"events",
+		"message",
 		routingKey,
 		// mandatory - we don't care if there I no queue
 		false,
@@ -93,7 +70,7 @@ func (conn Conn) StartConsumer(
 	}
 
 	// bind the queue to the routing key
-	err = conn.Channel.QueueBind(queueName, routingKey, "events", false, nil)
+	err = conn.Channel.QueueBind(queueName, routingKey, "message", false, nil)
 	if err != nil {
 		return err
 	}

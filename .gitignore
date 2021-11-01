@@ -1,6 +1,6 @@
 # ENV
 *.env
 # IDE
-.idea
+*.idea
 #LOG
 *.log
